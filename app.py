@@ -6,7 +6,7 @@ import re
 
 app = Flask(__name__)
 
-# וודא שהמפתח כאן ללא רווחים
+# וודא שהמפתח כאן תקין וללא רווחים
 GEMINI_API_KEY = 'AIzaSyCrzRKa84LkocOiF0dkC3wx1O_IVJfDGug'
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -17,7 +17,7 @@ def test():
         return Response("id_list_message=t-נא להקליט הודעה", mimetype='text/plain')
 
     try:
-        # הורדת הקובץ מימות המשיח
+        # הורדת הקובץ
         full_url = f"https://call2all.co.il/ym/api/DownloadFile?path=ivr2/{file_path}"
         response_audio = requests.get(full_url, timeout=15)
         response_audio.raise_for_status()
@@ -25,26 +25,23 @@ def test():
         with open("temp_audio.wav", "wb") as f:
             f.write(response_audio.content)
 
-        # הפתרון: שימוש בשם מודל ללא קידומת models/ כדי למנוע 404
         model = genai.GenerativeModel("gemini-1.5-flash")
-        
-        # העלאה
         audio_file = genai.upload_file(path="temp_audio.wav")
         
-        # יצירת תשובה
+        # שינוי ההנחיה לתשובה מפורטת
         response = model.generate_content([
-            audio_file,
-            "הקשב וענה בקצרה מאוד בעברית (עד 10 מילים)."
+            audio_file, 
+            "נתח את ההקלטה וענה עליה בצורה מפורטת מאוד בעברית. הסבר את כל הנקודות החשובות."
         ])
         
-        # ניקוי הטקסט עבור המערכת הטלפונית
         clean_text = re.sub(r'[^\u0590-\u05FF\s0-9.,?!]', '', response.text).strip()
+        print(f"DEBUG Response: {clean_text}") # תוכל לראות את זה בלוג ב-Render
+        
         return Response(f"id_list_message=t-{clean_text}", mimetype='text/plain')
 
     except Exception as e:
-        # במקרה של שגיאה, נחזיר אותה לטלפון כדי שנדע אם ה-404 נעלם
-        error_str = str(e)[:15].replace(" ", "_")
-        return Response(f"id_list_message=t-שגיאה_{error_str}", mimetype='text/plain')
+        print(f"ERROR: {str(e)}")
+        return Response(f"id_list_message=t-חלה שגיאה בעיבוד", mimetype='text/plain')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
