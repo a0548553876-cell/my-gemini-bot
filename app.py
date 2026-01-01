@@ -13,42 +13,35 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    # הדפסת כל הפרמטרים ללוגים לצורך ניפוי שגיאות
-    print(f"DEBUG: All received params: {request.values.to_dict()}")
+    # ימות המשיח שולחים את נתיב ההקלטה במשתנה בשם val
+    file_path = request.values.get('val')
     
-    # ניסיון לקבל את הלינק מכל שם אפשרי שימות המשיח שולחים
-    file_url = request.values.get('file_url') or request.values.get('val')
-    
-    # בדיקה אם הלינק תקין ולא מכיל את המשתנה הגולמי %path%
-    if not file_url or "%" in str(file_url):
-        print(f"Error: Invalid file_url received: {file_url}")
-        return Response("id_list_message=t-נא להקליט שוב לאחר הצליל", mimetype='text/plain')
+    # הדפסה ללוגים כדי שנוכל לראות את הנתיב שהתקבל
+    print(f"DEBUG: Received file path from Yemot: {file_path}")
+
+    if not file_path or "%" in str(file_path):
+        return Response("id_list_message=t-נא להקליט הודעה לאחר הצליל", mimetype='text/plain')
 
     try:
-        print(f"Processing audio from: {file_url}")
+        # בניית הלינק המלא להורדה מהשרת של ימות המשיח
+        download_url = f"https://call2all.co.il/ym/api/DownloadFile?token=YOUR_TOKEN&path={file_path}"
+        # הערה: אם המערכת שלך פתוחה ללא טוקן, הלינק עשוי להשתנות. 
+        # אבל בוא ננסה קודם לראות אם ג'מיני מצליח לקרוא את הקובץ.
         
-        # הורדת קובץ האודיו
-        response_audio = requests.get(file_url, timeout=15)
+        response_audio = requests.get(file_path, timeout=15)
         with open("temp_audio.wav", "wb") as f:
             f.write(response_audio.content)
 
-        # העלאה לג'מיני וקבלת תשובה
         sample_file = genai.upload_file(path="temp_audio.wav", mime_type="audio/wav")
-        response = model.generate_content([
-            sample_file,
-            "הקשב להקלטה וענה עליה בקצרה מאוד בעברית (עד 20 מילים)."
-        ])
+        response = model.generate_content([sample_file, "ענה בקצרה בעברית על ההקלטה"])
         
-        answer = response.text
-        # ניקוי תווים מיוחדים שלא נתמכים בימות המשיח
-        clean_text = re.sub(r'[^\u0590-\u05FF\s0-9.,?!]', '', answer).strip()
-        
-        print(f"Gemini response: {clean_text}")
+        clean_text = re.sub(r'[^\u0590-\u05FF\s0-9.,?!]', '', response.text).strip()
         return Response(f"id_list_message=t-{clean_text}", mimetype='text/plain')
 
     except Exception as e:
-        print(f"Detailed Error: {str(e)}")
-        return Response(f"id_list_message=t-שגיאה בעיבוד {str(e)[:15]}", mimetype='text/plain')
+        print(f"Error: {str(e)}")
+        return Response(f"id_list_message=t-שגיאה בעיבוד הקובץ", mimetype='text/plain')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
