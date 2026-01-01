@@ -7,7 +7,7 @@ import re
 app = Flask(__name__)
 
 # הגדרת מפתח ה-API ללא רווחים
-GEMINI_API_KEY = 'AIzaSyA6M5Y3_ajzoUGcbTUI-lkpEv5sTW7ivxs'
+GEMINI_API_KEY = 'AIzaSyAghheFXOwt6CnzZyHlotmCDUfuUzAmdbk'
 genai.configure(api_key=GEMINI_API_KEY)
 
 @app.route('/test', methods=['GET', 'POST'])
@@ -52,3 +52,4 @@ def test():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
+
