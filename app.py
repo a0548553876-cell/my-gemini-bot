@@ -6,14 +6,15 @@ import re
 
 app = Flask(__name__)
 
-# הגדרת מפתח ה-API של ג'מיני - וודא שהמפתח שלך כאן!
+# הגדרת מפתח ה-API של ג'מיני
 GEMINI_API_KEY = 'AIzaSyA6M5Y3_ajzoUGcbTUI- lkpEv5sTW7ivxs'
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+
+# עדכון שם המודל לגרסה היציבה
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    # קבלת הנתיב החלקי (למשל 5/016.wav)
     file_path = request.values.get('val')
     print(f"DEBUG: Received file path from Yemot: {file_path}")
 
@@ -21,19 +22,17 @@ def test():
         return Response("id_list_message=t-נא להקליט הודעה לאחר הצליל", mimetype='text/plain')
 
     try:
-        # בניית הכתובת המלאה להורדה מהשרת של ימות המשיח
-        # אנחנו משתמשים בכתובת הציבורית שלהם להורדת קבצים
+        # הכתובת שכבר ראינו שעובדת בלוגים שלך
         full_url = f"https://call2all.co.il/ym/api/DownloadFile?path=ivr2/{file_path}"
         print(f"DEBUG: Attempting to download from: {full_url}")
         
-        # הורדת הקובץ
         response_audio = requests.get(full_url, timeout=15)
         response_audio.raise_for_status()
         
         with open("temp_audio.wav", "wb") as f:
             f.write(response_audio.content)
 
-        # העלאה לג'מיני וקבלת תשובה
+        # העלאה ועיבוד
         sample_file = genai.upload_file(path="temp_audio.wav", mime_type="audio/wav")
         response = model.generate_content([
             sample_file,
@@ -47,7 +46,7 @@ def test():
 
     except Exception as e:
         print(f"Detailed Error: {str(e)}")
-        return Response(f"id_list_message=t-חלה שגיאה בעיבוד הקול", mimetype='text/plain')
+        return Response(f"id_list_message=t-סליחה, חלה שגיאה בעיבוד הקול", mimetype='text/plain')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
