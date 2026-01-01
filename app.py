@@ -7,7 +7,7 @@ import re
 app = Flask(__name__)
 
 # הגדרת מפתח ה-API של ג'מיני - וודא שהמפתח שלך כאן!
-GEMINI_API_KEY = 'AIzaSyA6M5Y3_ajzoUGcbTUI- lkpEv5sTW7ivxs'
+GEMINI_API_KEY = 'AIzaSyA6M5Y3_ajzoUGcbTUI-lkpEv5sTW7ivxs'
 genai.configure(api_key=GEMINI_API_KEY)
 
 # שימוש בשם המודל הסטנדרטי ביותר
@@ -55,3 +55,4 @@ def test():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
+
