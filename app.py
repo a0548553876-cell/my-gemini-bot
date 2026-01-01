@@ -50,5 +50,20 @@ def test():
         # מחזיר את השגיאה כטקסט לטלפון כדי שנדע מה קרה
         return Response(f"id_list_message=t-שגיאה בעיבוד. {str(e)[:20]}", mimetype='text/plain')
 
+@app.route('/test', methods=['GET', 'POST'])
+def test():
+    # מדפיס ללוגים את כל מה שהגיע מימות המשיח כדי שנפסיק לנחש
+    print(f"DEBUG: All received params: {request.values.to_dict()}")
+    
+    # מנסה לקחת את הלינק מכל שם אפשרי
+    file_url = request.values.get('file_url') or request.values.get('val')
+    
+    if not file_url or "%" in str(file_url):
+        return Response("id_list_message=t-נא להקליט שוב לאחר הצליל", mimetype='text/plain')
+
+    try:
+        # כאן הקוד ששלחתי לך קודם להורדה ושליחה לג'מיני...
+        # (הקפד להעתיק את כל הבלוק של ה-try מהתשובה הקודמת שלי)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
