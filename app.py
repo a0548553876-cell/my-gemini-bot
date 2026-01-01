@@ -17,7 +17,7 @@ chat_session = model.start_chat(history=[])
 @app.route('/test', methods=['GET', 'POST'])
 def test():
     # ימות המשיח שולחים את הלינק להקלטה בפרמטר שנקרא 'val' (או שם אחר שתבחר)
-    file_url = request.values.get('file_url', '').strip()
+    file_url = request.values.get('file_url') or request.values.get('path')
     
     if not file_url:
         return Response("id_list_message=t-לא התקבלה הקלטה", mimetype='text/plain')
@@ -50,3 +50,4 @@ def test():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
