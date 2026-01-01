@@ -13,33 +13,34 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route('/test', methods=['GET', 'POST'])
 def test():
-    # קבלת הלינק לקובץ האודיו מימות המשיח
-    file_url = request.values.get('file_url', '').strip()
+    # הדפסת כל הפרמטרים ללוגים לצורך ניפוי שגיאות
+    print(f"DEBUG: All received params: {request.values.to_dict()}")
     
-    # אם השרת לא קיבל לינק, הוא לא יקרוס אלא יחזיר הודעה מסודרת
-    if not file_url or file_url == '%path%':
-        print("Error: No valid file_url received")
-        return Response("id_list_message=t-לא התקבלה הקלטה תקינה", mimetype='text/plain')
+    # ניסיון לקבל את הלינק מכל שם אפשרי שימות המשיח שולחים
+    file_url = request.values.get('file_url') or request.values.get('val')
+    
+    # בדיקה אם הלינק תקין ולא מכיל את המשתנה הגולמי %path%
+    if not file_url or "%" in str(file_url):
+        print(f"Error: Invalid file_url received: {file_url}")
+        return Response("id_list_message=t-נא להקליט שוב לאחר הצליל", mimetype='text/plain')
 
     try:
         print(f"Processing audio from: {file_url}")
         
-        # הורדת הקובץ זמנית לשרת ה-Render
-        response_audio = requests.get(file_url, timeout=10)
+        # הורדת קובץ האודיו
+        response_audio = requests.get(file_url, timeout=15)
         with open("temp_audio.wav", "wb") as f:
             f.write(response_audio.content)
 
-        # שליחה לג'מיני לתימלול ומענה
+        # העלאה לג'מיני וקבלת תשובה
         sample_file = genai.upload_file(path="temp_audio.wav", mime_type="audio/wav")
-        
-        # בקשה מג'מיני (הוא עושה הכל - גם שומע וגם עונה)
         response = model.generate_content([
             sample_file,
             "הקשב להקלטה וענה עליה בקצרה מאוד בעברית (עד 20 מילים)."
         ])
         
         answer = response.text
-        # ניקוי הטקסט כדי שימות המשיח יוכלו להקריא אותו (בלי כוכביות וסימנים מוזרים)
+        # ניקוי תווים מיוחדים שלא נתמכים בימות המשיח
         clean_text = re.sub(r'[^\u0590-\u05FF\s0-9.,?!]', '', answer).strip()
         
         print(f"Gemini response: {clean_text}")
@@ -47,23 +48,7 @@ def test():
 
     except Exception as e:
         print(f"Detailed Error: {str(e)}")
-        # מחזיר את השגיאה כטקסט לטלפון כדי שנדע מה קרה
-        return Response(f"id_list_message=t-שגיאה בעיבוד. {str(e)[:20]}", mimetype='text/plain')
+        return Response(f"id_list_message=t-שגיאה בעיבוד {str(e)[:15]}", mimetype='text/plain')
 
-@app.route('/test', methods=['GET', 'POST'])
-def test():
-    # מדפיס ללוגים את כל מה שהגיע מימות המשיח כדי שנפסיק לנחש
-    print(f"DEBUG: All received params: {request.values.to_dict()}")
-    
-    # מנסה לקחת את הלינק מכל שם אפשרי
-    file_url = request.values.get('file_url') or request.values.get('val')
-    
-    if not file_url or "%" in str(file_url):
-        return Response("id_list_message=t-נא להקליט שוב לאחר הצליל", mimetype='text/plain')
-
-    try:
-        # כאן הקוד ששלחתי לך קודם להורדה ושליחה לג'מיני...
-        # (הקפד להעתיק את כל הבלוק של ה-try מהתשובה הקודמת שלי)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
